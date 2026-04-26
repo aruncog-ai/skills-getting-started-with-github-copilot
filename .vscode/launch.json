@@ -6,14 +6,16 @@
   "configurations": [
     {
       "name": "Launch Mergington WebApp",
-      "type": "debugpy",
+      "type": "node",
       "request": "launch",
-      "module": "uvicorn",
+      "runtimeExecutable": "python",
       "args": [
+        "-m",
+        "uvicorn",
         "src.app:app",
         "--reload"
       ],
-      "jinja": true
+      "console": "integratedTerminal"
     }
   ]
 }
