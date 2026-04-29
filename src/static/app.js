@@ -35,12 +35,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         activitiesList.appendChild(activityCard);
 
-        // Populate participants list
+        // Populate participants list (each with a delete icon)
         const participantsListEl = activityCard.querySelector('.participants-list');
         if (details.participants && details.participants.length) {
           details.participants.forEach((p) => {
             const li = document.createElement('li');
-            li.textContent = p;
+            li.className = 'participant-item';
+            li.innerHTML = `
+              <span class="participant-email">${p}</span>
+              <button class="remove-participant" data-activity="${name}" data-email="${p}" title="Unregister">✖</button>
+            `;
             participantsListEl.appendChild(li);
           });
         } else {
@@ -83,6 +87,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Refresh activities so the new participant appears immediately
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
@@ -99,6 +105,47 @@ document.addEventListener("DOMContentLoaded", () => {
       messageDiv.className = "error";
       messageDiv.classList.remove("hidden");
       console.error("Error signing up:", error);
+    }
+  });
+
+  // Delegate click events for remove-participant buttons
+  activitiesList.addEventListener('click', async (event) => {
+    const btn = event.target.closest('.remove-participant');
+    if (!btn) return;
+
+    const activityName = btn.dataset.activity;
+    const email = btn.dataset.email;
+
+    if (!activityName || !email) return;
+
+    try {
+      const resp = await fetch(
+        `/activities/${encodeURIComponent(activityName)}/participant?email=${encodeURIComponent(email)}`,
+        { method: 'DELETE' }
+      );
+
+      const result = await resp.json();
+
+      if (resp.ok) {
+        messageDiv.textContent = result.message;
+        messageDiv.className = 'success';
+        messageDiv.classList.remove('hidden');
+        // Refresh activities to reflect removal
+        fetchActivities();
+      } else {
+        messageDiv.textContent = result.detail || 'Failed to remove participant';
+        messageDiv.className = 'error';
+        messageDiv.classList.remove('hidden');
+      }
+
+      setTimeout(() => {
+        messageDiv.classList.add('hidden');
+      }, 5000);
+    } catch (error) {
+      messageDiv.textContent = 'Failed to remove participant. Please try again.';
+      messageDiv.className = 'error';
+      messageDiv.classList.remove('hidden');
+      console.error('Error removing participant:', error);
     }
   });
 
